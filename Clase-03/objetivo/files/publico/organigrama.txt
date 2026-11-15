@@ -1,0 +1,11 @@
+INVERSIONES QHAPAQ SAC - Organigrama 2026 (uso interno)
+======================================================
+Gerencia General ........ Carmen Flores ....... gerencia@qhapaq.lab
+Jefe de TI .............. Jorge Díaz .......... jdiaz@qhapaq.lab
+Finanzas ................ María Quispe ........ mquispe@qhapaq.lab
+Recursos Humanos ........ Rosa Huamán ......... rhuaman@qhapaq.lab
+Soporte (practicante) ... Luis Mamani ......... soporte@qhapaq.lab
+
+Formato de usuario: inicial del nombre + apellido (sin tildes).
+
+QHAPAQ{08-sesion-nula-smb}

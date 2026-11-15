@@ -1,0 +1,75 @@
+# Laboratorio Clase 03 · Red interna de Inversiones Qhapaq SAC (empresa ficticia)
+# Red aislada 10.30.0.0/24 dentro de tu VM o de tu Kali en WSL. No se publica ningún puerto hacia afuera.
+#
+#   10.30.0.53   ns1             EN ALCANCE   DNS
+#   10.30.0.10   www             EN ALCANCE   web
+#   10.30.0.25   mail            EN ALCANCE   correo
+#   10.30.0.45   files           EN ALCANCE   archivos
+#   10.30.0.60   db              EN ALCANCE   base de datos y agente de backup
+#   10.30.0.161  monitor         EN ALCANCE   monitoreo
+#   10.30.0.250  erp-proveedor   FUERA DE ALCANCE (aparece en el DNS de Qhapaq, pero es de un tercero)
+#
+# Levantar:  docker compose up -d --build
+# Apagar:    docker compose down
+
+name: qhapaq-interna
+
+x-comun: &comun
+  restart: unless-stopped
+
+services:
+  ns1:
+    <<: *comun
+    build: ./ns1
+    container_name: qi-ns1
+    hostname: ns1
+    networks: { qhapaq-interna: { ipv4_address: 10.30.0.53 } }
+
+  www:
+    <<: *comun
+    build: ./www
+    container_name: qi-www
+    hostname: www
+    networks: { qhapaq-interna: { ipv4_address: 10.30.0.10 } }
+
+  mail:
+    <<: *comun
+    build: ./mail
+    container_name: qi-mail
+    hostname: mail
+    networks: { qhapaq-interna: { ipv4_address: 10.30.0.25 } }
+
+  files:
+    <<: *comun
+    build: ./files
+    container_name: qi-files
+    hostname: files
+    networks: { qhapaq-interna: { ipv4_address: 10.30.0.45 } }
+
+  db:
+    <<: *comun
+    build: ./db
+    container_name: qi-db
+    hostname: db
+    networks: { qhapaq-interna: { ipv4_address: 10.30.0.60 } }
+
+  monitor:
+    <<: *comun
+    build: ./monitor
+    container_name: qi-monitor
+    hostname: monitor
+    networks: { qhapaq-interna: { ipv4_address: 10.30.0.161 } }
+
+  erp-proveedor:
+    <<: *comun
+    build: ./erp
+    container_name: qi-erp
+    hostname: erp-proveedor
+    networks: { qhapaq-interna: { ipv4_address: 10.30.0.250 } }
+
+networks:
+  qhapaq-interna:
+    name: qhapaq-interna
+    ipam:
+      config:
+        - subnet: 10.30.0.0/24

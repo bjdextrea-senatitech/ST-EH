@@ -1,0 +1,10 @@
+options {
+    directory "/var/cache/bind";
+    listen-on { any; };
+    listen-on-v6 { none; };
+    recursion no;
+    dnssec-validation no;
+    // ERROR DE CONFIGURACIÓN (intencional): cualquiera puede pedir la zona completa
+    allow-transfer { any; };
+    version "BIND 9 - Qhapaq DNS interno";
+};

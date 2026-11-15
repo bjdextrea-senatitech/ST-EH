@@ -1,0 +1,3 @@
+#!/bin/sh
+# Agente ficticio de sincronización de backups: recibe la contraseña por parámetro (mala práctica)
+while true; do sleep 3600; done

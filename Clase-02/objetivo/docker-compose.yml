@@ -1,0 +1,46 @@
+# Laboratorio Clase 02 · Inversiones Qhapaq SAC (empresa ficticia)
+# Red aislada 172.30.0.0/24 dentro de tu VM. No se publica ningún puerto hacia afuera.
+#
+#   172.30.0.10  web            EN ALCANCE
+#   172.30.0.20  files          EN ALCANCE
+#   172.30.0.30  erp-proveedor  FUERA DE ALCANCE (es de un tercero: no lo toques)
+#
+# Levantar:  docker compose up -d --build
+# Apagar:    docker compose down
+
+name: qhapaq
+
+services:
+  web:
+    build: ./web
+    container_name: qhapaq-web
+    hostname: web
+    restart: unless-stopped
+    networks:
+      qhapaq-lab:
+        ipv4_address: 172.30.0.10
+
+  files:
+    build: ./files
+    container_name: qhapaq-files
+    hostname: files
+    restart: unless-stopped
+    networks:
+      qhapaq-lab:
+        ipv4_address: 172.30.0.20
+
+  erp-proveedor:
+    build: ./erp
+    container_name: qhapaq-erp
+    hostname: erp-proveedor
+    restart: unless-stopped
+    networks:
+      qhapaq-lab:
+        ipv4_address: 172.30.0.30
+
+networks:
+  qhapaq-lab:
+    name: qhapaq-lab
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

@@ -1,0 +1,11 @@
+INVERSIONES QHAPAQ SAC - Instructivo interno de soporte
+=======================================================
+Para conectarse al servidor de archivos por SSH:
+
+  usuario:     soporte
+  contraseña:  Qhapaq2025!
+
+La limpieza de logs se hace con sudo find (ya tiene permiso, no pide clave).
+NO compartir este documento con proveedores.
+
+QHAPAQ{02-ftp-anonimo-expone-credenciales}

@@ -1,0 +1,5 @@
+Política de contraseñas (versión 2019, pendiente de actualizar)
+- Mínimo 8 caracteres.
+- Formato sugerido para que nadie las olvide: Empresa + Año + símbolo
+  (ejemplo: Qhapaq2019!)
+- Se cambian una vez al año, en enero.

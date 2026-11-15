@@ -1,0 +1,8 @@
+Notas de despliegue - v1.3 (jdiaz)
+----------------------------------
+- Web migrada a nginx. Falta ocultar la versión del servidor.
+- El servidor de archivos (172.30.0.20) quedó con FTP anónimo activado
+  para que los proveedores descarguen formatos. Revisar qué hay en /pub.
+- El ERP lo administra el proveedor Andes Cloud (172.30.0.30). No es nuestro.
+
+QHAPAQ{01-reconocimiento-web}
