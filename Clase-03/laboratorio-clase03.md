@@ -114,7 +114,7 @@ Con esta opción no puedes actualizar con `git pull`: si hay correcciones, tiene
 
 ```bash
 sudo apt update
-sudo apt install -y docker.io docker-compose nmap dnsutils curl netcat-openbsd openssl smbclient snmp onesixtyone redis-tools whatweb libimage-exiftool-perl xsltproc theharvester pipx git unzip python3-dev build-essential
+sudo apt install -y docker.io docker-compose nmap dnsutils curl netcat-openbsd openssl smbclient snmp onesixtyone redis-tools whatweb libimage-exiftool-perl xsltproc theharvester spiderfoot pipx git unzip python3-dev build-essential
 ```
 `apt install` instala de una vez todo lo de la clase: escáner, clientes de cada protocolo (DNS, SMB, SNMP, Redis), metadatos de imágenes y theHarvester. `python3-dev` y `build-essential` sirven para compilar dependencias de Blackbird (por ejemplo `aiohttp`) en las versiones nuevas de Python que trae Kali.
 
@@ -201,7 +201,27 @@ Una carpeta por tipo de reconocimiento, las plantillas en la raíz, las imágene
 
 **Objetivo de práctica:** `vulnweb.com`, un dominio que Acunetix publica **para que se practique** sobre él, y `zonetransfer.me`, creado por DigiNinja para enseñar transferencias de zona.
 
-### 1.1 Google Dorking (10 min)
+### 1.0 Lanza SpiderFoot y déjalo trabajando (2 min)
+
+**SpiderFoot** automatiza el OSINT: le das un objetivo y más de 200 módulos consultan fuentes públicas (certificados, DNS, WHOIS, buscadores, filtraciones…). Cada dato que encuentra se lo pasa a los otros módulos para que sigan investigando. Tarda varios minutos, así que lo lanzas **ahora** y revisas lo que encontró en el 1.6, cuando ya hiciste todo a mano.
+
+Abre una **segunda terminal** y ejecuta:
+
+```bash
+spiderfoot -l 127.0.0.1:5001
+```
+`-l` levanta la interfaz web en tu propia máquina, en el puerto 5001. Usa `127.0.0.1` y **nunca** `0.0.0.0`: la interfaz no tiene contraseña y, con `0.0.0.0`, cualquiera en tu red podría usarla. Deja esa terminal abierta.
+
+En el navegador:
+
+1. Abre `http://127.0.0.1:5001` y entra a **New Scan**.
+2. **Scan Name:** `vulnweb-pasivo` · **Seed Target:** `vulnweb.com`.
+3. En la pestaña **By Use Case**, elige **Passive**.
+4. Haz clic en **Run Scan Now** y vuelve a esta guía.
+
+> ⚠️ **Passive** solo usa módulos que **no** tocan al objetivo. **Footprint** y **All** incluyen módulos activos: escaneo de puertos, araña web y fuerza bruta de DNS. Aquí se usa Passive porque este es el Lab 1. Varios módulos piden API key y se saltan solos si no la tienen: es normal.
+
+### 1.1 Google Dorking (8 min)
 
 Los operadores de búsqueda filtran lo que Google ya indexó. Prueba cada uno en el navegador y anota **cuántos resultados** y **qué descubriste**:
 
@@ -250,7 +270,7 @@ theHarvester -d vulnweb.com -b crtsh,certspotter,hackertarget,duckduckgo -l 200 
 
 Compara con lo que sacaste de `crt.sh`/CTFR y de los dorks: ¿qué subdominios aparecen solo en una fuente? **Ninguna herramienta lo ve todo**: el profesional cruza fuentes.
 
-### 1.4 DNS público (10 min)
+### 1.4 DNS público (8 min)
 
 ```bash
 dig vulnweb.com ANY +noall +answer
@@ -283,6 +303,28 @@ dig axfr zonetransfer.me @nsztm1.digi.ninja | tee 01-pasivo/axfr-zonetransfer.tx
 whatweb -a 3 http://testphp.vulnweb.com | tee 01-pasivo/whatweb-testphp.txt
 ```
 `whatweb` identifica tecnologías desde la terminal; `-a 3` es el nivel de agresividad (hace más peticiones). Ojo: **esto ya es activo**, porque le hablas al servidor. Se permite porque el sitio existe para practicar.
+
+### 1.6 SpiderFoot: ¿qué encontró la máquina? (4 min)
+
+Vuelve a `http://127.0.0.1:5001`, entra a **Scans** y abre `vulnweb-pasivo`. Aunque siga corriendo, ya puedes mirar resultados.
+
+- **Summary:** cuántos datos encontró de cada tipo (*Internet Name*, *IP Address*, *Email Address*, *Linked URL*…).
+- **Browse:** la lista de cada tipo. Abre **Internet Name** y compárala con tus subdominios de `crt.sh`, CTFR y theHarvester.
+- **Graph:** cómo un dato llevó al siguiente (dominio → subdominio → IP → otro dominio en la misma IP).
+- **Export → CSV:** guárdalo como `~/recon-qhapaq/01-pasivo/spiderfoot-vulnweb.csv`.
+
+También se puede usar sin la interfaz web, solo con algunos módulos y el resultado directo a un archivo:
+
+```bash
+spiderfoot -s vulnweb.com -m sfp_crt,sfp_dnsresolve,sfp_hackertarget,sfp_whois -o csv -q > 01-pasivo/spiderfoot-cli-vulnweb.csv
+```
+`-s` es el objetivo; `-m` elige los módulos (certificados, resolución DNS, HackerTarget y WHOIS); `-o csv` define el formato y `-q` oculta los mensajes de progreso. Con `spiderfoot -M` ves la lista de los más de 200 módulos.
+
+❓ ¿Qué encontró SpiderFoot que **tú no** encontraste? ¿Y qué encontraste tú que **él no**? ¿Todo lo que reporta es cierto? (Pista: revisa de qué módulo salió cada dato antes de ponerlo en un informe.)
+
+> 🧠 Pro: las herramientas automáticas encuentran **mucho**, pero también traen ruido y datos de terceros (otros dominios en la misma IP, por ejemplo). El trabajo del analista es **verificar y filtrar**, no copiar el reporte.
+
+Cuando termines, en la segunda terminal, detén SpiderFoot con `Ctrl+C`.
 
 ---
 
@@ -657,6 +699,9 @@ Un `.zip` de `~/recon-qhapaq` **sin** los reportes de tus cuentas personales (de
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
+| `Failed to build 'pyyaml'` o `'lxml'` al instalar SpiderFoot | Lo instalaste desde GitHub con `pip`: fija versiones viejas que no compilan en el Python de Kali | No uses el repositorio: `sudo apt install -y spiderfoot` (ya viene empaquetado y probado en Kali) |
+| `spiderfoot` no abre en el navegador | La terminal donde lo lanzaste se cerró, o usaste otra IP o puerto | Vuelve a lanzar `spiderfoot -l 127.0.0.1:5001` y deja esa terminal abierta |
+| SpiderFoot tarda muchísimo | El caso de uso Passive ejecuta decenas de módulos | Revisa los resultados parciales: no hace falta esperar a que termine. Para algo rápido, usa la versión CLI con `-m` |
 | `$: command not found` | Copiaste el `$` del README de una herramienta. El `$` solo representa el prompt, no se escribe | Escribe el comando sin el `$`. Por ejemplo: `python3 ctfr.py --help` |
 | `fatal: repository '.../tree/main/Clase-03/' not found` | Copiaste la URL de la **carpeta** en el navegador | Clona el repositorio `.../ST-EH.git` con *sparse checkout* (Lab 0.0) |
 | `fatal: destination path 'ST-EH' already exists` | Ya lo clonaste en una clase anterior | `cd ~/ST-EH && git pull && git sparse-checkout add Clase-03` |
