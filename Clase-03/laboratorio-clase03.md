@@ -87,7 +87,19 @@ ln -sfn ~/ST-EH/Clase-03 ~/Clase-03
 
 Si el docente corrige algo después, actualizas con `cd ~/ST-EH && git pull`.
 
-**Opción B · Sin Git (ZIP)**
+**Opción B · Git, todo el repositorio (todas las clases)**
+
+Si prefieres tener todas las clases de una vez:
+
+```bash
+cd ~
+git clone https://github.com/bjdextrea-senatitech/ST-EH.git
+ln -sfn ~/ST-EH/Clase-03 ~/Clase-03
+ls ~/Clase-03
+```
+Sin `--sparse`, Git descarga **todas** las carpetas del repositorio. El acceso directo `~/Clase-03` sigue siendo necesario porque esta guía usa esa ruta. Para las clases siguientes basta con `cd ~/ST-EH && git pull`.
+
+**Opción C · Sin Git (ZIP)**
 
 En el navegador, abre `github.com/bjdextrea-senatitech/ST-EH`, haz clic en el botón verde **Code** y luego en **Download ZIP**. Ese ZIP trae **todas** las clases. Después:
 
@@ -126,12 +138,33 @@ python3 -m venv ~/blackbird/.venv
 
 ### 0.3 Levantar la red interna de Qhapaq
 
+Primero apaga el laboratorio de la clase anterior, si sigue encendido. Sus contenedores y su red pueden chocar con los de esta clase:
+
+```bash
+docker compose -p qhapaq down --remove-orphans
+```
+`-p qhapaq` es el **nombre del proyecto** de la Clase 02 (la línea `name:` de su `docker-compose.yml`). Con `-p`, el comando funciona **desde cualquier carpeta**, aunque ya no tengas la Clase 02 descargada. `down` apaga y **borra** los contenedores y la red de ese laboratorio, pero no los archivos de la clase. `--remove-orphans` también quita contenedores que ya no están en el `docker-compose.yml`. Si no había nada encendido, no pasa nada.
+
+> Si quieres empezar **completamente limpio** (borra **todos** tus contenedores, no solo los del curso):
+> ```bash
+> docker rm -f $(docker ps -aq) 2>/dev/null
+> docker network prune -f
+> ```
+
+Ahora sí, construye y levanta la red de Qhapaq.
+
+> 📁 `docker compose` busca el archivo `docker-compose.yml` **en la carpeta donde estás**. En esta clase está en `Clase-03/objetivo/`, no en `Clase-03/`. Si te sale `no configuration file provided: not found`, estás en la carpeta equivocada.
+
 ```bash
 cd ~/Clase-03/objetivo
-docker compose up -d --build
+ls docker-compose.yml
+docker compose down --remove-orphans
+docker compose up -d --build --force-recreate
 docker compose ps
 ```
-Deben aparecer 7 contenedores `qi-*` en estado *Up*.
+El `down` de esta clase limpia un intento anterior que haya quedado a medias; `--build` construye las imágenes y `--force-recreate` crea los contenedores desde cero. Deben aparecer 7 contenedores `qi-*` en estado *Up*.
+
+Si cambiaste algo en `objetivo/` o el docente publicó una corrección (`git pull`), reconstruye sin usar la caché: `docker compose build --no-cache && docker compose up -d --force-recreate`.
 
 ### 0.4 Verificar
 
@@ -604,6 +637,8 @@ Un `.zip` de `~/recon-qhapaq` **sin** los reportes de tus cuentas personales (de
 | `fatal: repository '.../tree/main/Clase-03/' not found` | Copiaste la URL de la **carpeta** en el navegador | Clona el repositorio `.../ST-EH.git` con *sparse checkout* (Lab 0.0) |
 | `fatal: destination path 'ST-EH' already exists` | Ya lo clonaste en una clase anterior | `cd ~/ST-EH && git pull && git sparse-checkout add Clase-03` |
 | `fatal error: Python.h: No such file or directory` al instalar Blackbird | Falta el paquete de desarrollo de Python para compilar `aiohttp` | `sudo apt install -y python3-dev build-essential` y repite el `pip install -r` |
+| `no configuration file provided: not found` | Ejecutaste `docker compose` fuera de `objetivo/` | `cd ~/Clase-03/objetivo` y repite el comando |
+| `cd: /root/Clase-03: No such file or directory` | Estás como **root**: para root, `~` es `/root` y no tu carpeta personal | `exit` para volver a tu usuario. Si tienes que seguir como root, usa la ruta completa: `/home/TU_USUARIO/Clase-03` |
 | El script de verificación no encuentra blackbird, maigret o holehe | Los instalaste como **root** (quedaron en `/root`) | Sal de root (`exit`) y repite el Lab 0.2 con tu usuario |
 | `maigret: command not found` | `pipx` no agregó su carpeta al `PATH` | `pipx ensurepath` y abre otra terminal |
 | `externally-managed-environment` al usar `pip` | Kali protege el Python del sistema | Usa `pipx` (maigret, holehe) o el `.venv` (blackbird) |
