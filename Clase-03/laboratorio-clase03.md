@@ -46,13 +46,67 @@ Al final entregas un **mapa de la superficie de ataque**: la materia prima de la
 
 Todo se hace en tu Kali (VM de VirtualBox o Kali en WSL con Docker instalado **dentro** de Kali).
 
+> 👤 **Trabaja con tu usuario normal, no como root.** Si tu prompt dice `root@...` o termina en `#`, escribe `exit`. Todo lo que dice `~` en esta guía es tu carpeta personal (`/home/tu_usuario`). Como root, `~` sería `/root` y el script de verificación no encontraría tus herramientas. Usa `sudo` solo donde la guía lo indica.
+
+### 0.0 Descargar la clase desde GitHub
+
+Las clases están en el repositorio `ST-EH`. **No** copies la dirección que ves en el navegador al abrir la carpeta:
+
+```bash
+git clone https://github.com/bjdextrea-senatitech/ST-EH/tree/main/Clase-03   # ❌ falla: "repository not found"
+```
+`git clone` solo sabe clonar **repositorios completos** (`.../ST-EH.git`). La parte `/tree/main/Clase-03` es la página web con la que GitHub **muestra** una carpeta. No es un repositorio.
+
+**Opción A · Git, solo la carpeta de la clase (recomendada)**
+
+Si es la primera vez que descargas una clase:
+
+```bash
+sudo apt install -y git
+cd ~
+git clone --filter=blob:none --sparse https://github.com/bjdextrea-senatitech/ST-EH.git
+cd ~/ST-EH
+git sparse-checkout set Clase-03
+ln -sfn ~/ST-EH/Clase-03 ~/Clase-03
+ls ~/Clase-03
+```
+- `--filter=blob:none` descarga el índice del repositorio, pero no el contenido de los archivos todavía.
+- `--sparse` deja la carpeta vacía, salvo los archivos de la raíz.
+- `git sparse-checkout set Clase-03` le dice a Git que **solo** descargue y llene esa carpeta.
+- `ln -sfn` crea un acceso directo `~/Clase-03`, que es la ruta que usa esta guía.
+
+Si ya tienes `~/ST-EH` de una clase anterior, **no vuelvas a clonar**. Solo agrega la carpeta nueva:
+
+```bash
+cd ~/ST-EH
+git pull
+git sparse-checkout add Clase-03
+ln -sfn ~/ST-EH/Clase-03 ~/Clase-03
+```
+`git pull` trae lo último que publicó el docente; `add` suma la carpeta nueva **sin quitar** las anteriores.
+
+Si el docente corrige algo después, actualizas con `cd ~/ST-EH && git pull`.
+
+**Opción B · Sin Git (ZIP)**
+
+En el navegador, abre `github.com/bjdextrea-senatitech/ST-EH`, haz clic en el botón verde **Code** y luego en **Download ZIP**. Ese ZIP trae **todas** las clases. Después:
+
+```bash
+cd ~
+unzip ~/Downloads/ST-EH-main.zip
+cp -r ~/ST-EH-main/Clase-03 ~/Clase-03
+```
+Con esta opción no puedes actualizar con `git pull`: si hay correcciones, tienes que descargar el ZIP otra vez.
+
 ### 0.1 Herramientas del sistema
 
 ```bash
 sudo apt update
-sudo apt install -y docker.io docker-compose nmap dnsutils curl netcat-openbsd openssl smbclient snmp onesixtyone redis-tools whatweb libimage-exiftool-perl xsltproc theharvester pipx git
+sudo apt install -y docker.io docker-compose nmap dnsutils curl netcat-openbsd openssl smbclient snmp onesixtyone redis-tools whatweb libimage-exiftool-perl xsltproc theharvester pipx git unzip python3-dev build-essential
 ```
-`apt install` instala de una vez todo lo de la clase: escáner, clientes de cada protocolo (DNS, SMB, SNMP, Redis), metadatos de imágenes y theHarvester.
+`apt install` instala de una vez todo lo de la clase: escáner, clientes de cada protocolo (DNS, SMB, SNMP, Redis), metadatos de imágenes y theHarvester. `python3-dev` y `build-essential` sirven para compilar dependencias de Blackbird (por ejemplo `aiohttp`) en las versiones nuevas de Python que trae Kali.
+
+> Si `apt update` muestra un error de firma en un repositorio de **NVIDIA/CUDA** ("SHA1 is not considered secure"), ese repositorio externo usa una firma que Kali ya no acepta. No afecta a la clase. Desactívalo con `grep -rl nvidia /etc/apt/sources.list.d/` y cambia el nombre de ese archivo agregándole `.disabled` al final.
 
 ### 0.2 Herramientas OSINT de Python (aisladas con pipx)
 
@@ -547,6 +601,10 @@ Un `.zip` de `~/recon-qhapaq` **sin** los reportes de tus cuentas personales (de
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
+| `fatal: repository '.../tree/main/Clase-03/' not found` | Copiaste la URL de la **carpeta** en el navegador | Clona el repositorio `.../ST-EH.git` con *sparse checkout* (Lab 0.0) |
+| `fatal: destination path 'ST-EH' already exists` | Ya lo clonaste en una clase anterior | `cd ~/ST-EH && git pull && git sparse-checkout add Clase-03` |
+| `fatal error: Python.h: No such file or directory` al instalar Blackbird | Falta el paquete de desarrollo de Python para compilar `aiohttp` | `sudo apt install -y python3-dev build-essential` y repite el `pip install -r` |
+| El script de verificación no encuentra blackbird, maigret o holehe | Los instalaste como **root** (quedaron en `/root`) | Sal de root (`exit`) y repite el Lab 0.2 con tu usuario |
 | `maigret: command not found` | `pipx` no agregó su carpeta al `PATH` | `pipx ensurepath` y abre otra terminal |
 | `externally-managed-environment` al usar `pip` | Kali protege el Python del sistema | Usa `pipx` (maigret, holehe) o el `.venv` (blackbird) |
 | holehe marca todo con `[x]` "rate limit" | Demasiadas consultas desde tu IP | Espera unos minutos; no lo corras en bucle |
