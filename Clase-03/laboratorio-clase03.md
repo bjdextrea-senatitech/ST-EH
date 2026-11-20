@@ -140,6 +140,13 @@ python3 -m venv ~/blackbird/.venv
 ```
 `git clone` descarga Blackbird; `python3 -m venv` le crea un entorno propio y `pip install -r` instala sus dependencias ahí dentro.
 
+```bash
+git clone https://github.com/UnaPibaGeek/ctfr ~/ctfr
+python3 -m venv ~/ctfr/.venv
+~/ctfr/.venv/bin/pip install -r ~/ctfr/requirements.txt
+```
+**CTFR**, de Sheila Berta (*UnaPibaGeek*), saca subdominios de los registros de Certificate Transparency desde la terminal. Se instala igual que Blackbird, con su propio `.venv`, porque Kali no deja usar `pip3 install` directo sobre el Python del sistema.
+
 ### 0.3 Levantar la red interna de Qhapaq
 
 Primero apaga el laboratorio de la clase anterior, si sigue encendido. Sus contenedores y su red pueden chocar con los de esta clase:
@@ -220,6 +227,18 @@ https://crt.sh/?q=%25.vulnweb.com
 ```
 `crt.sh` lista todos los certificados TLS emitidos públicamente para el dominio; `%25` es el comodín `%`. Cada nombre que aparece es un subdominio que **alguien pidió proteger**.
 
+Ahora lo mismo desde la terminal con **CTFR**:
+
+```bash
+~/ctfr/.venv/bin/python ~/ctfr/ctfr.py -d vulnweb.com -o ~/recon-qhapaq/01-pasivo/ctfr-vulnweb.txt
+sort -u ~/recon-qhapaq/01-pasivo/ctfr-vulnweb.txt
+```
+`-d` es el dominio y `-o` guarda la lista como evidencia. CTFR no adivina nombres ni usa diccionarios: solo **lee** lo que ya está publicado en los registros de certificados (por dentro consulta a `crt.sh`). Por eso sigue siendo reconocimiento **pasivo**. `sort -u` ordena la lista y quita los repetidos.
+
+> 💡 `crt.sh` es un servicio gratuito y a veces se satura. Si CTFR termina con un error largo (`JSONDecodeError`, `502` o `timeout`), espera un minuto y vuelve a intentarlo. No es un error tuyo.
+
+❓ ¿CTFR encontró los mismos subdominios que viste en el navegador? ¿Por qué conviene tenerlo en la terminal? (Pista: se puede automatizar y guardar como evidencia.)
+
 Anota los subdominios únicos. Vuelve a esta lista en el Lab 5: un certificado **interno** también delata subdominios.
 
 ### 1.3 theHarvester (10 min)
@@ -229,7 +248,7 @@ theHarvester -d vulnweb.com -b crtsh,certspotter,hackertarget,duckduckgo -l 200 
 ```
 `-d` es el dominio; `-b` elige fuentes que **no necesitan API key**; `-l` limita resultados por fuente; `-f` guarda el resultado (XML/JSON) como evidencia.
 
-Compara con lo que sacaste de `crt.sh` y de los dorks: ¿qué subdominios aparecen solo en una fuente? **Ninguna herramienta lo ve todo**: el profesional cruza fuentes.
+Compara con lo que sacaste de `crt.sh`/CTFR y de los dorks: ¿qué subdominios aparecen solo en una fuente? **Ninguna herramienta lo ve todo**: el profesional cruza fuentes.
 
 ### 1.4 DNS público (10 min)
 
@@ -638,11 +657,12 @@ Un `.zip` de `~/recon-qhapaq` **sin** los reportes de tus cuentas personales (de
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
+| `$: command not found` | Copiaste el `$` del README de una herramienta. El `$` solo representa el prompt, no se escribe | Escribe el comando sin el `$`. Por ejemplo: `python3 ctfr.py --help` |
 | `fatal: repository '.../tree/main/Clase-03/' not found` | Copiaste la URL de la **carpeta** en el navegador | Clona el repositorio `.../ST-EH.git` con *sparse checkout* (Lab 0.0) |
 | `fatal: destination path 'ST-EH' already exists` | Ya lo clonaste en una clase anterior | `cd ~/ST-EH && git pull && git sparse-checkout add Clase-03` |
 | `fatal error: Python.h: No such file or directory` al instalar Blackbird | Falta el paquete de desarrollo de Python para compilar `aiohttp` | `sudo apt install -y python3-dev build-essential` y repite el `pip install -r` |
 | `no configuration file provided: not found` | Ejecutaste `docker compose` fuera de `objetivo/` | `cd ~/Clase-03/objetivo` y repite el comando |
-| `cd: /root/Clase-03: No such file or directory` | Estás como **root**: para root, `~` es `/root` y no tu carpeta personal | `exit` para volver a tu usuario. Si tienes que seguir como root, usa la ruta completa: `/home/TU_USUARIO/Clase-03` |
+| `cd: /root/Clase-03: No such file or directory` o `cp: cannot stat '/root/Clase-03/...'` | Estás como **root** (para root, `~` es `/root`) o no creaste el acceso directo del Lab 0.0 | Crea el acceso directo para el usuario que estás usando: `ln -sfn /home/TU_USUARIO/ST-EH/Clase-03 ~/Clase-03`. Lo ideal es `exit` y trabajar con tu usuario |
 | El script de verificación no encuentra blackbird, maigret o holehe | Los instalaste como **root** (quedaron en `/root`) | Sal de root (`exit`) y repite el Lab 0.2 con tu usuario |
 | `maigret: command not found`, o `[FALTA] maigret / holehe` en el script | No están instalados para **este** usuario, o `pipx` no agregó `~/.local/bin` al `PATH` | Con el mismo usuario que corre el script: `pipx install maigret && pipx install holehe && pipx ensurepath && exec bash`. Si dice *already installed*, basta con `pipx ensurepath && exec bash` |
 | `externally-managed-environment` al usar `pip` | Kali protege el Python del sistema | Usa `pipx` (maigret, holehe) o el `.venv` (blackbird) |
