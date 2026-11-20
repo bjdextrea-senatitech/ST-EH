@@ -122,12 +122,16 @@ sudo apt install -y docker.io docker-compose nmap dnsutils curl netcat-openbsd o
 
 ### 0.2 Herramientas OSINT de Python (aisladas con pipx)
 
+> ⚠️ Haz **todo** el Lab 0.2 y el 0.4 con el **mismo usuario**. `pipx` y Blackbird se instalan en la carpeta personal (`~`) de quien los ejecuta. Si instalas como root y verificas como tu usuario (o al revés), el script te marcará `[FALTA]` aunque sí los instalaste.
+
 ```bash
-pipx ensurepath
 pipx install maigret
 pipx install holehe
+pipx ensurepath
+exec bash
+maigret --version && holehe --help | head -1
 ```
-`pipx` instala cada herramienta de Python en su propio entorno para que no rompa el Python del sistema; `ensurepath` agrega sus comandos a tu `PATH` (cierra y abre la terminal después).
+`pipx` instala cada herramienta de Python en su propio entorno para que no rompa el Python del sistema. `ensurepath` agrega `~/.local/bin`, donde quedan sus comandos, a tu `PATH`. `exec bash` recarga la terminal para que el cambio tome efecto sin tener que cerrarla. La última línea comprueba que los dos comandos ya se encuentran.
 
 ```bash
 git clone https://github.com/p1ngul1n0/blackbird ~/blackbird
@@ -640,7 +644,7 @@ Un `.zip` de `~/recon-qhapaq` **sin** los reportes de tus cuentas personales (de
 | `no configuration file provided: not found` | Ejecutaste `docker compose` fuera de `objetivo/` | `cd ~/Clase-03/objetivo` y repite el comando |
 | `cd: /root/Clase-03: No such file or directory` | Estás como **root**: para root, `~` es `/root` y no tu carpeta personal | `exit` para volver a tu usuario. Si tienes que seguir como root, usa la ruta completa: `/home/TU_USUARIO/Clase-03` |
 | El script de verificación no encuentra blackbird, maigret o holehe | Los instalaste como **root** (quedaron en `/root`) | Sal de root (`exit`) y repite el Lab 0.2 con tu usuario |
-| `maigret: command not found` | `pipx` no agregó su carpeta al `PATH` | `pipx ensurepath` y abre otra terminal |
+| `maigret: command not found`, o `[FALTA] maigret / holehe` en el script | No están instalados para **este** usuario, o `pipx` no agregó `~/.local/bin` al `PATH` | Con el mismo usuario que corre el script: `pipx install maigret && pipx install holehe && pipx ensurepath && exec bash`. Si dice *already installed*, basta con `pipx ensurepath && exec bash` |
 | `externally-managed-environment` al usar `pip` | Kali protege el Python del sistema | Usa `pipx` (maigret, holehe) o el `.venv` (blackbird) |
 | holehe marca todo con `[x]` "rate limit" | Demasiadas consultas desde tu IP | Espera unos minutos; no lo corras en bucle |
 | theHarvester sin resultados en una fuente | La fuente limita por IP o necesita clave | Usa las fuentes del 1.3; las que piden clave se configuran en `api-keys.yaml` |
