@@ -1,0 +1,78 @@
+# Clase 04 · Explotación de servicios · Inversiones Qhapaq SAC (red de servidores)
+# Levantar:   docker compose up -d --build
+# Con MSSQL:  docker compose --profile mssql up -d --build      (necesita ~2 GB de RAM extra)
+# Apagar:     docker compose --profile mssql down
+name: qhapaq-servicios
+
+networks:
+  qhapaq-servicios:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.40.0.0/24
+
+services:
+  fw:
+    build: ./fw
+    container_name: qs-fw
+    hostname: qs-fw
+    cap_add: [NET_ADMIN]
+    networks: { qhapaq-servicios: { ipv4_address: 10.40.0.5 } }
+    restart: unless-stopped
+
+  ftp:
+    build: ./ftp
+    container_name: qs-ftp
+    hostname: qs-ftp
+    networks: { qhapaq-servicios: { ipv4_address: 10.40.0.21 } }
+    restart: unless-stopped
+
+  ssh:
+    build: ./ssh
+    container_name: qs-ssh
+    hostname: qs-ssh
+    networks: { qhapaq-servicios: { ipv4_address: 10.40.0.22 } }
+    restart: unless-stopped
+
+  db:
+    build: ./db
+    container_name: qs-db
+    hostname: qs-db
+    networks: { qhapaq-servicios: { ipv4_address: 10.40.0.33 } }
+    restart: unless-stopped
+
+  rdp:
+    build: ./rdp
+    container_name: qs-rdp
+    hostname: qs-rdp
+    networks: { qhapaq-servicios: { ipv4_address: 10.40.0.38 } }
+    restart: unless-stopped
+
+  smb:
+    build: ./smb
+    container_name: qs-files
+    hostname: qs-files
+    networks: { qhapaq-servicios: { ipv4_address: 10.40.0.45 } }
+    restart: unless-stopped
+
+  redis:
+    build: ./redis
+    container_name: qs-cache
+    hostname: qs-cache
+    networks: { qhapaq-servicios: { ipv4_address: 10.40.0.63 } }
+    restart: unless-stopped
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    profiles: [mssql]
+    container_name: qs-mssql
+    hostname: qs-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: "Qhapaq2023!"
+    volumes:
+      - ./mssql:/opt/qhapaq:ro
+    entrypoint: ["/bin/bash", "/opt/qhapaq/start.sh"]
+    networks: { qhapaq-servicios: { ipv4_address: 10.40.0.14 } }
+    restart: unless-stopped

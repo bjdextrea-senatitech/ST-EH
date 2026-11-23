@@ -1,0 +1,4 @@
+! Respaldo de configuración - router de borde Qhapaq
+hostname qhapaq-edge-01
+snmp-server community public RO
+! QHAPAQ{11-tftp-udp-sin-autenticacion}

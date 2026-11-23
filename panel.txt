@@ -1,0 +1,2 @@
+Qhapaq Admin Panel v0.9 (solo tráfico desde puerto 53)
+QHAPAQ{12-el-firewall-confia-en-el-puerto-53}
