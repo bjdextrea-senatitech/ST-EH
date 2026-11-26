@@ -1,0 +1,156 @@
+# ============================================================================
+#  QHAPAQ · Laboratorio de EXPLOTACION DE SERVICIOS (SENATI Tech - Clase 05)
+#  Red: qhapaq-sede  10.55.0.0/24   (todo corre DENTRO de Kali Linux 2026)
+#
+#  Levantar el laboratorio completo (core):   docker compose up -d --build
+#  Agregar los servicios en la nube (pesados): docker compose --profile nube up -d
+#  Ver el estado:                              docker compose ps
+#  Apagar y limpiar:                           docker compose down
+#
+#  >>> VER LAS IP DE LOS CONTENEDORES (lo que pediste) <<<
+#   Una sola IP:       docker inspect -f '{{.NetworkSettings.Networks.qhapaq-sede.IPAddress}}' qx-ftp
+#   Todas de un golpe: docker inspect -f '{{.Name}} -> {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q)
+#   Por red:           docker network inspect qhapaq-sede -f '{{range .Containers}}{{.Name}} {{.IPv4Address}}{{"\n"}}{{end}}'
+# ============================================================================
+name: qhapaq-sede
+
+networks:
+  qhapaq-sede:
+    name: qhapaq-sede
+    ipam:
+      config:
+        - subnet: 10.55.0.0/24
+
+services:
+
+  dc01:                              # SMB · rpcclient · DNS · Kerberos · SYSVOL/GPP · DCSync
+    build: ./dc01
+    image: qx/dc01
+    container_name: qx-dc01
+    hostname: dc01
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.10 } }
+    restart: unless-stopped
+
+  mgmt:                              # WinRM / OMI (OMIGOD CVE-2021-38647)
+    build: ./mgmt
+    image: qx/mgmt
+    container_name: qx-mgmt
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.11 } }
+    restart: unless-stopped
+
+  radius:                            # RADIUS (secreto compartido debil)
+    build: ./radius
+    image: qx/radius
+    container_name: qx-radius
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.18 } }
+    restart: unless-stopped
+
+  ftp:                               # ProFTPd 1.3.5 mod_copy (CVE-2015-3306)
+    build: ./ftp
+    image: qx/ftp
+    container_name: qx-ftp
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.21 } }
+    restart: unless-stopped
+
+  ssh:                               # OpenSSH (credencial debil + sudo tar GTFOBins)
+    build: ./ssh
+    image: qx/ssh
+    container_name: qx-ssh
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.22 } }
+    restart: unless-stopped
+
+  smtp:                              # Postfix open relay + VRFY
+    build: ./smtp
+    image: qx/smtp
+    container_name: qx-smtp
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.25 } }
+    restart: unless-stopped
+
+  printers:                          # CUPS/IPP 631 + impresion cruda 9100
+    build: ./printers
+    image: qx/printers
+    container_name: qx-printers
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.31 } }
+    restart: unless-stopped
+
+  postgres:                          # PostgreSQL COPY FROM PROGRAM (CVE-2019-9193)
+    build: ./postgres
+    image: qx/postgres
+    container_name: qx-postgres
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.32 } }
+    restart: unless-stopped
+
+  mysql:                             # MariaDB FILE priv -> INTO OUTFILE webshell
+    build: ./mysql
+    image: qx/mysql
+    container_name: qx-mysql
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.33 } }
+    restart: unless-stopped
+
+  rdp:                               # xrdp (credencial debil)
+    build: ./rdp
+    image: qx/rdp
+    container_name: qx-rdp
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.38 } }
+    restart: unless-stopped
+
+  legacy:                            # Ubuntu 14.04: Shellshock (80) + Heartbleed (443)
+    build: ./legacy
+    image: qx/legacy
+    container_name: qx-legacy
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.43 } }
+    restart: unless-stopped
+
+  vnc:                               # x11vnc password debil
+    build: ./vnc
+    image: qx/vnc
+    container_name: qx-vnc
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.59 } }
+    restart: unless-stopped
+
+  voip:                              # Asterisk SIP (enum extensiones + secreto debil)
+    build: ./voip
+    image: qx/voip
+    container_name: qx-voip
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.60 } }
+    restart: unless-stopped
+
+  redis:                             # Redis sin auth -> inyeccion de clave SSH (RCE)
+    build: ./redis
+    image: qx/redis
+    container_name: qx-redis
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.63 } }
+    restart: unless-stopped
+
+  snmp:                              # snmpd public/private + EXTEND
+    build: ./snmp
+    image: qx/snmp
+    container_name: qx-snmp
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.161 } }
+    restart: unless-stopped
+
+  # ---------- Perfil "nube": imagenes oficiales (necesitan descarga grande) ----------
+  mssql:                             # SQL Server 2022: sa debil + xp_cmdshell (RCE)
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: qx-mssql
+    profiles: ["nube"]
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Qhapaq#2023"
+      MSSQL_PID: "Developer"
+    volumes:
+      - ./mssql/setup.sql:/setup.sql:ro
+      - ./mssql/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/bash","/entrypoint.sh"]
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.14 } }
+    restart: unless-stopped
+
+  mongo:                             # MongoDB sin autenticacion (NoSQL)
+    image: mongo:6
+    container_name: qx-mongo
+    profiles: ["nube"]
+    command: ["mongod","--bind_ip_all"]        # sin --auth = acceso anonimo
+    volumes:
+      - ./mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks: { qhapaq-sede: { ipv4_address: 10.55.0.27 } }
+    restart: unless-stopped
